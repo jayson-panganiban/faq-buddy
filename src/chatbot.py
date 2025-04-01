@@ -1,13 +1,11 @@
 import os
 
 import gradio as gr
-import requests
+import requests  # type: ignore
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
-# Constants
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 
@@ -25,35 +23,25 @@ class FAQChatbot:
         """Check if the API is running and return status"""
         try:
             headers = {"X-OpenAI-Key": self.api_key} if self.api_key else {}
-            response = requests.get(f"{self.api_url}/health", headers=headers)
+            response = requests.get(
+                f"{self.api_url}/health", headers=headers, timeout=10.0
+            )
+            response.raise_for_status()
             return response.json()
         except Exception as e:
-            return {"status": "error", "message": f"API connection error: {str(e)}"}
-
-    def get_sources(self) -> dict:
-        """Get available FAQ sources from the API"""
-        try:
-            headers = {"X-OpenAI-Key": self.api_key} if self.api_key else {}
-            response = requests.get(f"{self.api_url}/sources", headers=headers)
-            return response.json()
-        except Exception as e:
-            return {"sources": {}, "total_faqs": 0, "error": str(e)}
-
-    def reload_faqs(self) -> str:
-        """Trigger FAQ reload in the API"""
-        try:
-            headers = {"X-OpenAI-Key": self.api_key} if self.api_key else {}
-            response = requests.post(f"{self.api_url}/reload-faqs", headers=headers)
-            result = response.json()
-            return f"✅ FAQs reloaded successfully. Total FAQs: {result.get('faq_count', 0)}"
-        except Exception as e:
-            return f"❌ Failed to reload FAQs: {str(e)}"
+            return {
+                "status": "error",
+                "message": f"Unexpected error during health check: {str(e)}",
+            }
 
     def ask_question(self, question: str) -> dict:
         """Send question to API and get answer"""
         if not self.api_key:
             return {
-                "answer": "Please enter your OpenAI API key first.",
+                "answer": (
+                    "⚠️ Error: OpenAI API key not found."
+                    " Please set the OPENAI_API_KEY environment variable."
+                ),
                 "confidence": 0.0,
                 "matched_question": None,
                 "source_url": None,
@@ -65,20 +53,11 @@ class FAQChatbot:
             response = requests.post(
                 f"{self.api_url}/ask", json={"text": question}, headers=headers
             )
-            if response.status_code == 200:
-                return response.json()
-            else:
-                error_detail = response.json().get("detail", "Unknown error")
-                return {
-                    "answer": f"Error: {error_detail}",
-                    "confidence": 0.0,
-                    "matched_question": None,
-                    "source_url": None,
-                    "brand": None,
-                }
+            response.raise_for_status()
+            return response.json()
         except Exception as e:
             return {
-                "answer": f"Error connecting to FAQ service: {str(e)}",
+                "answer": f"An unexpected error occurred: {str(e)}",
                 "confidence": 0.0,
                 "matched_question": None,
                 "source_url": None,
@@ -96,10 +75,10 @@ class FAQChatbot:
         # Format the response with metadata
         formatted = f"{answer}"
 
-        # Add metadata section if we have any
+        # Add metadata section if we have any relevant info
         metadata = []
-        if confidence > 0:
-            # Format confidence as percentage
+        # Only show confidence if it's meaningful (e.g., > 0 and not an error message)
+        if confidence > 0 and "Error" not in answer and "⚠️" not in answer:
             confidence_pct = f"{confidence * 100:.1f}%"
             metadata.append(f"Confidence: {confidence_pct}")
 
@@ -108,7 +87,7 @@ class FAQChatbot:
             and matched_question != "Synthesized from similar questions"
         ):
             metadata.append(f'Matched question: "{matched_question}"')
-        elif matched_question:
+        elif matched_question:  # Handles the "Synthesized..." case
             metadata.append(f"Response: {matched_question}")
 
         if brand:
@@ -128,152 +107,115 @@ class FAQChatbot:
         if not self.api_key:
             return "⚠️ Please enter your OpenAI API key in the settings panel first."
 
-        # Handle special commands
-        if message.strip().lower() == "/reload":
-            return self.reload_faqs()
-
-        if message.strip().lower() == "/sources":
-            sources_info = self.get_sources()
-            sources_text = "Available FAQ Sources:\n\n"
-            for brand, count in sources_info.get("sources", {}).items():
-                sources_text += f"- {brand}: {count} FAQs\n"
-            sources_text += f"\nTotal FAQs: {sources_info.get('total_faqs', 0)}"
-            return sources_text
-
-        if message.strip().lower() == "/health":
-            health = self.check_api_health()
-            return f"API Status: {health.get('status', 'unknown')}\nFAQ Count: {health.get('faq_count', 0)}"
-
-        if message.strip().lower() == "/about":
-            try:
-                headers = {"X-OpenAI-Key": self.api_key} if self.api_key else {}
-                response = requests.get(f"{self.api_url}/about", headers=headers)
-                if response.status_code == 200:
-                    about_data = response.json()
-                    app_info = about_data.get("application", {})
-                    team_info = about_data.get("team", {})
-
-                    about_text = "## About FAQ Bot\n\n"
-                    about_text += f"{app_info.get('description', '')}\n\n"
-                    about_text += "### Features\n"
-                    for feature in app_info.get("features", []):
-                        about_text += f"- {feature}\n"
-
-                    about_text += "\n### Team\n"
-                    about_text += f"**Team Leader:** {team_info.get('leader', '')}\n"
-                    about_text += (
-                        f"**Members:** {', '.join(team_info.get('members', []))}\n\n"
-                    )
-                    about_text += f"**Version:** {about_data.get('version', '1.0.0')}\n"
-                    about_text += f"**Repository:** {app_info.get('repository', '')}"
-
-                    return about_text
-                else:
-                    return (
-                        f"❌ Error retrieving about information: {response.status_code}"
-                    )
-            except Exception as e:
-                return f"❌ Error connecting to API: {str(e)}"
-
-        # Process regular questions
         response = self.ask_question(message)
         formatted_response = self.format_response(response)
 
         return formatted_response
 
 
-def create_chatbot_interface():
-    chatbot = FAQChatbot()
+chatbot = FAQChatbot()
 
-    # Create the interface
-    with gr.Blocks(title="Car Insurance FAQ Chatbot") as interface:
-        gr.Markdown(
-            """
-            # 🚗 Car Insurance FAQ Chatbot
-            
-            Ask questions about car insurance in Australia and get instant answers!
-            
-            *Special commands:*
-            - `/reload` - Reload FAQ database
-            - `/sources` - List available FAQ sources
-            - `/health` - Check API health
-            - `/about` - Display team and application information
-            """
+with gr.Blocks(title="Car Insurance FAQ Chatbot") as demo:
+    gr.Markdown(
+        """
+        # 🚗 Car Insurance FAQ Chatbot
+        
+        Ask questions about car insurance in Australia and get instant answers!
+        """
+    )
+
+    with gr.Accordion("⚙️ OpenAI API Key (Required)", open=True):
+        api_key_input = gr.Textbox(
+            label="API Key",
+            placeholder="Enter your OpenAI API key (starts with sk-...)",
+            type="password",
+        )
+        status_info = gr.Markdown("⚠️ Please enter your OpenAI API key to start")
+
+        def update_api_key(api_key):
+            if not api_key or not api_key.startswith("sk-"):
+                chatbot.api_key = None
+                return "⚠️ Please enter a valid OpenAI API key starting with 'sk-'"
+
+            # Set the API key and check health
+            health_status = chatbot.set_api_key(api_key)
+
+            if health_status.get("status") == "healthy":
+                return f"✅ API key valid! FAQs Loaded: {health_status.get('faq_count', 0)}"
+            else:
+                return f"⚠️ API connection error: {health_status.get('message', 'Unknown error')}"
+
+        # Update status when API key changes
+        api_key_input.change(
+            update_api_key, inputs=[api_key_input], outputs=status_info
         )
 
-        # API Key input
-        with gr.Accordion("⚙️ OpenAI API Key (Required)", open=True):
-            api_key_input = gr.Textbox(
-                label="API Key",
-                placeholder="Enter your OpenAI API key (starts with sk-...)",
-                type="password",
-            )
-            status_info = gr.Markdown("⚠️ Please enter your OpenAI API key to start")
+    chatbot_ui = gr.Chatbot(
+        label="Chat History",
+        height=500,
+        show_copy_button=True,
+        render_markdown=True,
+        type="messages",
+    )
 
-            # Function to validate and set the API key
-            def update_api_key(api_key):
-                if not api_key or not api_key.startswith("sk-"):
-                    chatbot.api_key = None
-                    return "⚠️ Please enter a valid OpenAI API key starting with 'sk-'"
+    message_input = gr.Textbox(
+        label="Your question",
+        placeholder="Type your car insurance question here...",
+        lines=2,
+    )
 
-                # Set the API key and check health
-                health_status = chatbot.set_api_key(api_key)
+    with gr.Row():
+        submit_btn = gr.Button("Send", variant="primary")
+        clear_btn = gr.Button("Clear")
 
-                if health_status.get("status") == "healthy":
-                    return f"✅ API key valid! FAQs Loaded: {health_status.get('faq_count', 0)}"
-                else:
-                    return f"⚠️ API connection error: {health_status.get('message', 'Unknown error')}"
+    gr.Examples(
+        examples=[
+            "What is the coverage for windscreen damage?",
+            "How do I make a claim?",
+            "What is the excess?",
+            "Is my car covered if I drive interstate?",
+            "What's the difference between comprehensive and third-party insurance?",
+            "Can I choose my own repairer?",
+            "Does my policy cover rental car costs after an accident?",
+            "How does my driving record affect my premium?",
+            "What happens if my car is written off?",
+            "Are modifications to my car covered?",
+        ],
+        inputs=message_input,
+        label="Examples",
+    )
 
-            # Update status when API key changes
-            api_key_input.change(
-                update_api_key, inputs=[api_key_input], outputs=status_info
-            )
-
-        # Chat interface - Updated to use the 'messages' type instead of deprecated 'tuples'
-        chatbot_ui = gr.Chatbot(
-            label="Chat History",
-            height=500,
-            show_copy_button=True,
-            render_markdown=True,
-            type="messages",  # Specify the message format to avoid deprecation warning
-        )
-
-        message_input = gr.Textbox(
-            label="Your question",
-            placeholder="Type your car insurance question here...",
-            lines=2,
-        )
-
-        with gr.Row():
-            submit_btn = gr.Button("Send", variant="primary")
-            clear_btn = gr.Button("Clear")
-
-        def user_input(user_message, history):
-            if not user_message.strip():
-                return "", history
-
-            # Get bot response
-            bot_response = chatbot.process_message(user_message, history)
-
-            # Use the new message format with 'role' and 'content' keys
-            history.append({"role": "user", "content": user_message})
-            history.append({"role": "assistant", "content": bot_response})
-
+    def user_input(user_message, history):
+        if not user_message.strip():
+            # Return empty string for input clear, and unchanged history
             return "", history
 
-        submit_btn.click(
-            user_input,
-            inputs=[message_input, chatbot_ui],
-            outputs=[message_input, chatbot_ui],
-        )
+        bot_response = chatbot.process_message(user_message, history)
 
-        message_input.submit(
-            user_input,
-            inputs=[message_input, chatbot_ui],
-            outputs=[message_input, chatbot_ui],
-        )
+        if not isinstance(
+            history, list
+        ):  # Handle potential initial None or other types
+            history = []
+        history.append({"role": "user", "content": user_message})
+        history.append({"role": "assistant", "content": bot_response})
 
-        # Updated clear function to return empty list for messages format
-        clear_btn.click(lambda: ("", []), outputs=[message_input, chatbot_ui])
+        # Clear the input field and return the updated history
+        return "", history
 
-    return interface
+    submit_btn.click(
+        user_input,
+        inputs=[message_input, chatbot_ui],
+        outputs=[message_input, chatbot_ui],
+    )
+
+    message_input.submit(
+        user_input,
+        inputs=[message_input, chatbot_ui],
+        outputs=[message_input, chatbot_ui],
+    )
+
+    clear_btn.click(lambda: ("", []), outputs=[message_input, chatbot_ui])
+
+
+if __name__ == "__main__":
+    demo.launch(share=False)
