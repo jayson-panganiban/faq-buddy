@@ -1786,7 +1786,7 @@
   },
   {
     "question": "How do I update my car insurance policy?",
-    "answer": "You can make changes to your policy in the RACV App and your online account. This includes: updating your vehicle details adding options or extras changing your excess changing your policy type by cancelling your existing policy and purchasing a new one. Go to your online account and select your policy to make changes. You can also call us on 13 72 28 or visit a retail store.",
+    "answer": "You can make changes to your policy in the RACV App and your online account. This includes: - updating your vehicle details - adding options or extras - changing your excess - changing your policy type by cancelling your existing policy and purchasing a new one. Go to your online account and select your policy to make changes. You can also call us on 13 72 28 or visit a retail store.",
     "brand": "racv",
     "url": "https://www.racv.com.au/help-and-support/car-insurance.html",
     "id": "racv-001"
@@ -2782,42 +2782,42 @@
     "question": "How can I make a car insurance claim?",
     "answer": "You can initiate a claim by calling CGU Insurance on 132 480, or by visiting their claims page.",
     "brand": "Bendigo Bank",
-    "url": "https://www.bendigobank.com.au/personal/insurance/car-insurance",
+    "url": "https://www.bendigobank.com.au/personal/insurance/car",
     "id": "bendigo-bank-001"
   },
   {
     "question": "Is my car covered when someone else drives it?",
     "answer": "Coverage depends on your policy. Comprehensive insurance covers other drivers, while nominated driver policies may have restrictions.",
     "brand": "Bendigo Bank",
-    "url": "https://www.bendigobank.com.au/personal/insurance/car-insurance/",
+    "url": "https://www.bendigobank.com.au/personal/insurance/car/",
     "id": "bendigo-bank-002"
   },
   {
     "question": "Who will repair my car after an accident?",
     "answer": "You can choose a licensed repairer or opt for one of Bendigo Bank’s trusted repair partners.",
     "brand": "Bendigo Bank",
-    "url": "",
+    "url": "https://www.bendigobank.com.au/personal/insurance/car/",
     "id": "bendigo-bank-003"
   },
   {
     "question": "What excesses apply to my policy?",
     "answer": "Includes basic, age, inexperienced driver, and additional excesses depending on the circumstances.",
     "brand": "Bendigo Bank",
-    "url": "https://www.bendigobank.com.au/personal/insurance/car-insurance/",
+    "url": "https://www.bendigobank.com.au/personal/insurance/car/",
     "id": "bendigo-bank-004"
   },
   {
     "question": "What if I exceed the 10,000 km limit on my low KM policy?",
     "answer": "You may have to pay an additional premium if you exceed the limit.",
     "brand": "Bendigo Bank",
-    "url": "https://www.bendigobank.com.au/personal/insurance/car-insurance/",
+    "url": "https://www.bendigobank.com.au/personal/insurance/car/",
     "id": "bendigo-bank-005"
   },
   {
     "question": "What if someone other than the nominated driver drives my car?",
     "answer": "If they are under 25, the policy won’t cover them unless specified exceptions apply. If over 25, a double excess is applied.",
     "brand": "Bendigo Bank",
-    "url": "https://www.bendigobank.com.au/personal/insurance/car-insurance/",
+    "url": "https://www.bendigobank.com.au/personal/insurance/car/",
     "id": "bendigo-bank-006"
   },
   {
@@ -2852,7 +2852,7 @@
     "question": "Is roadside assistance included in my policy?",
     "answer": "No, Bendigo Bank does not include roadside assistance in standard policies.",
     "brand": "Bendigo Bank",
-    "url": "https://www.bendigobank.com.au/personal/insurance/car-insurance/",
+    "url": "https://www.bendigobank.com.au/personal/insurance/car/",
     "id": "bendigo-bank-011"
   },
   {
