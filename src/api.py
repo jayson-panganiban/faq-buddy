@@ -601,9 +601,3 @@ async def reload_faqs(
     openai_service.synthesis_cache.clear()
     logger.info("FAQ reload complete. Caches cleared.")
     return {"status": "success", "faq_count": len(faq_repo.faqs)}
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)
